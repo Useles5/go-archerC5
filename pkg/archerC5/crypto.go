@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/hex"
-	"errors"
+	"fmt"
 	"math/big"
 	"strconv"
 	"strings"
@@ -13,13 +13,13 @@ import (
 func EncryptCredentials(plaintext, modulusHex, exponentHex string) (string, error) {
 	exponent, err := strconv.ParseInt(exponentHex, 16, 64)
 	if err != nil {
-		return "", errors.New("invalid exponent")
+		return "", fmt.Errorf("failed to parse exponent %q: %w", exponentHex, err)
 	}
 
 	// modulus(N) requires Big Int as it cannot be stored in int64
 	modulus, okay := new(big.Int).SetString(modulusHex, 16)
 	if !okay {
-		return "", errors.New("invalid modulus")
+		return "", fmt.Errorf("failed to parse modulus %q: %w", modulusHex)
 	}
 
 	pubKey := &rsa.PublicKey{
