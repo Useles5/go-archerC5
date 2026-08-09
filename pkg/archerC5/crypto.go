@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func EncryptCredentials(plaintext, modulusHex, exponentHex string) (string, error) {
+func EncryptPayload(plaintext, modulusHex, exponentHex string) (string, error) {
 	exponent, err := strconv.ParseInt(exponentHex, 16, 64)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse exponent %q: %w", exponentHex, err)
@@ -19,7 +19,7 @@ func EncryptCredentials(plaintext, modulusHex, exponentHex string) (string, erro
 	// modulus(N) requires Big Int as it cannot be stored in int64
 	modulus, okay := new(big.Int).SetString(modulusHex, 16)
 	if !okay {
-		return "", fmt.Errorf("failed to parse modulus %q: %w", modulusHex)
+		return "", fmt.Errorf("failed to parse modulus %q", modulusHex)
 	}
 
 	pubKey := &rsa.PublicKey{

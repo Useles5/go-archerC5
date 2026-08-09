@@ -52,7 +52,7 @@ func Authenticate(password string) error {
 	exponentHex := eeMatch[1]
 	modulusHex := nnMatch[1]
 
-	encryptedPayload, err := EncryptCredentials(password, modulusHex, exponentHex)
+	encryptedPayload, err := EncryptPayload(password, modulusHex, exponentHex)
 	if err != nil {
 		return fmt.Errorf("failed to encrypt password: %w", err)
 	}

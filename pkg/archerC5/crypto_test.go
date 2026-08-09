@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestEncryptCredentials(t *testing.T) {
+func TestEncryptPayload(t *testing.T) {
 	// Generate a dummy 1024-bit RSA key pair for testing
 	// 1024 bits = 128 bytes = 256 hex characters
 	// 1024 bits / 4 bits for single hex char = 256 hex characters
@@ -26,9 +26,9 @@ func TestEncryptCredentials(t *testing.T) {
 	exponentHex := strconv.FormatInt(int64(privateKey.E), 16)
 	originalPassword := "MySuperSecretRouterPassword"
 
-	encryptedHex, err := EncryptCredentials(originalPassword, modulusHex, exponentHex)
+	encryptedHex, err := EncryptPayload(originalPassword, modulusHex, exponentHex)
 	if err != nil {
-		t.Fatalf("EncryptCredentials failed: %v", err)
+		t.Fatalf("EncryptPayload failed: %v", err)
 	}
 
 	// Verify TP-Link length requirement
