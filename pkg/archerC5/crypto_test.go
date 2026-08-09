@@ -3,6 +3,7 @@ package archerC5
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
 	"encoding/hex"
 	"strconv"
 	"testing"
@@ -48,8 +49,12 @@ func TestEncryptPayload(t *testing.T) {
 		t.Fatalf("Decryption failed (padding or math error): %v", err)
 	}
 
+	decodedPasswordBytes, err := base64.StdEncoding.DecodeString(string(decryptedBytes))
+	if err != nil {
+		t.Fatalf("Failed to decode base64 string: %v", err)
+	}
 	// Compare the decrypted password
-	if string(decryptedBytes) != originalPassword {
-		t.Errorf("Expected %q, but got %q", originalPassword, string(decryptedBytes))
+	if string(decodedPasswordBytes) != originalPassword {
+		t.Errorf("Expected %q, but got %q", originalPassword, string(decodedPasswordBytes))
 	}
 }

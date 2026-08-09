@@ -3,6 +3,7 @@ package archerC5
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -11,6 +12,9 @@ import (
 )
 
 func EncryptPayload(plaintext, modulusHex, exponentHex string) (string, error) {
+
+	encodedText := base64.StdEncoding.EncodeToString([]byte(plaintext))
+
 	exponent, err := strconv.ParseInt(exponentHex, 16, 64)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse exponent %q: %w", exponentHex, err)
@@ -28,7 +32,7 @@ func EncryptPayload(plaintext, modulusHex, exponentHex string) (string, error) {
 	}
 
 	// EncryptPKCS1v15 is deprecated
-	encryptedBytes, err := rsa.EncryptPKCS1v15(rand.Reader, pubKey, []byte(plaintext))
+	encryptedBytes, err := rsa.EncryptPKCS1v15(rand.Reader, pubKey, []byte(encodedText))
 	if err != nil {
 		return "", err
 	}
