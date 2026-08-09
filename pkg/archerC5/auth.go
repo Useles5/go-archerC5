@@ -8,6 +8,7 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"regexp"
+	"strings"
 )
 
 // Found in err.js
@@ -25,6 +26,10 @@ var (
 )
 
 func NewClient(password, routerIP string) (*RouterClient, error) {
+
+	// Strip protocol
+	routerIP = strings.TrimPrefix(routerIP, "http://")
+	routerIP = strings.TrimPrefix(routerIP, "https://")
 
 	baseURL := fmt.Sprintf("http://%s", routerIP)
 
@@ -134,13 +139,13 @@ func NewClient(password, routerIP string) (*RouterClient, error) {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	//fmt.Printf("Login Response: %s\n", string(loginBodyBytes))
-
-	bodyString = string(loginBodyBytes)
+	// router attaches newline character(\n) at the end of response body
+	// Trim it
+	bodyString = strings.TrimSpace(string(loginBodyBytes))
 
 	switch bodyString {
 	case routerSuccess:
-		// nothing to do
+		// nothing to do ¯\_(ツ)_/¯
 	case routerErrAuthFailed:
 		return nil, ErrAuthFailed
 	case routerErrFormat:
