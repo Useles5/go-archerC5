@@ -10,38 +10,54 @@ import (
 	"regexp"
 )
 
-func Authenticate(password string) error {
+// Found in err.js
+const (
+	routerSuccess       = "$.ret=0;"     // NO_ERROR
+	routerErrFormat     = "$.ret=71011;" // HTTP_ERR_FORMAT
+	routerErrAuthFailed = "$.ret=71233;" // ERR_HTTP_ERR_USER_PWD_NOT_CORRECT
+)
+
+// Sentinel errors
+var (
+	ErrAuthFailed = errors.New("authentication failed: incorrect password")
+	ErrFormat     = errors.New("request format error")
+	ErrUnknownAPI = errors.New("router returned an unknown response code")
+)
+
+func NewClient(password, routerIP string) (*RouterClient, error) {
+
+	baseURL := fmt.Sprintf("http://%s", routerIP)
 
 	jar, err := cookiejar.New(nil)
 	if err != nil {
-		return fmt.Errorf("failed to create cookie jar: %v", err)
+		return nil, fmt.Errorf("failed to create cookie jar: %v", err)
 	}
 	// Custom client
 	client := &http.Client{
 		Jar: jar,
 	}
 
-	req, err := http.NewRequest(http.MethodGet, "http://tplinkwifi.net/cgi/getParm", nil)
+	req, err := http.NewRequest(http.MethodGet, baseURL+"/cgi/getParm", nil)
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	// Set Required Headers
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-	req.Header.Set("Referer", "http://tplinkwifi.net/")
+	req.Header.Set("Referer", baseURL+"/")
 	req.Header.Set("Accept", "*/*")
 
 	// Send Req
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to send request: %w", err)
+		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	// Read the entire response into memory
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 	bodyString := string(bodyBytes)
 
@@ -55,7 +71,7 @@ func Authenticate(password string) error {
 
 	// Check if found match
 	if len(eeMatch) < 2 || len(nnMatch) < 2 {
-		return errors.New("failed to find N and E in router response")
+		return nil, errors.New("failed to find N and E in router response")
 	}
 
 	exponentHex := eeMatch[1]
@@ -63,11 +79,11 @@ func Authenticate(password string) error {
 
 	encryptedUsername, err := EncryptPayload("admin", modulusHex, exponentHex)
 	if err != nil {
-		return fmt.Errorf("failed to encrypt username: %w", err)
+		return nil, fmt.Errorf("failed to encrypt username: %w", err)
 	}
 	encryptedPassword, err := EncryptPayload(password, modulusHex, exponentHex)
 	if err != nil {
-		return fmt.Errorf("failed to encrypt password: %w", err)
+		return nil, fmt.Errorf("failed to encrypt password: %w", err)
 	}
 
 	// Construct the payload
@@ -88,43 +104,54 @@ func Authenticate(password string) error {
 		url.QueryEscape(encryptedUsername),
 		url.QueryEscape(encryptedPassword),
 	)
-	fmt.Println(queryString)
-	fullURL := fmt.Sprintf("http://tplinkwifi.net/cgi/login?%s", queryString)
+
+	fullURL := fmt.Sprintf("%s/cgi/login?%s", baseURL, queryString)
 
 	// Data is in URL, no body is needed so nil
 	loginReq, err := http.NewRequest(http.MethodPost, fullURL, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	// Set Headers
-	loginReq.Header.Set("Origin", "http://tplinkwifi.net")
-	loginReq.Header.Set("Referer", "http://tplinkwifi.net/")
+	loginReq.Header.Set("Origin", baseURL)
+	loginReq.Header.Set("Referer", baseURL+"/")
 	loginReq.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
 	loginReq.Header.Set("Accept", "*/*")
 
 	loginRes, err := client.Do(loginReq)
 	if err != nil {
-		return fmt.Errorf("failed to send request: %w", err)
+		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
 	defer loginRes.Body.Close()
 
 	if loginRes.StatusCode != http.StatusOK {
-		return fmt.Errorf("login failed with status %d", loginRes.StatusCode)
+		return nil, fmt.Errorf("login failed with status %d", loginRes.StatusCode)
 	}
 
 	loginBodyBytes, err := io.ReadAll(loginRes.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	fmt.Printf("Login Response: %s\n", string(loginBodyBytes))
+	//fmt.Printf("Login Response: %s\n", string(loginBodyBytes))
 
-	// Set Cookie
-	loginURL, _ := url.Parse("http://tplinkwifi.net")
-	cookies := client.Jar.Cookies(loginURL)
-	fmt.Printf("Captured Session Cookies: %v\n", cookies)
+	bodyString = string(loginBodyBytes)
 
-	return nil
+	switch bodyString {
+	case routerSuccess:
+		// nothing to do
+	case routerErrAuthFailed:
+		return nil, ErrAuthFailed
+	case routerErrFormat:
+		return nil, ErrFormat
+	default:
+		// Catch-all
+		return nil, fmt.Errorf("%w: %s", ErrUnknownAPI, bodyString)
+	}
+	return &RouterClient{
+		BaseURL:    baseURL,
+		httpClient: client,
+	}, nil
 
 }
