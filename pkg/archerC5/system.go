@@ -2,6 +2,7 @@ package archerC5
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -30,6 +31,16 @@ func (c *RouterClient) Reboot() error {
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("reboot request failed: %s", resp.Status)
+	}
+
+	respBodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+	respStr := string(respBodyBytes)
+
+	if respStr != "[error]0" {
+		return fmt.Errorf("router rejected reboot command, raw response: %s", respStr)
 	}
 
 	return nil
