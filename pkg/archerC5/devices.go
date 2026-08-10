@@ -20,7 +20,7 @@ type ConnectedDevice struct {
 // GetConnectedDevices queries the router's Data Model for the LAN_HOST_ENTRY table
 func (c *RouterClient) GetConnectedDevices() ([]ConnectedDevice, error) {
 
-	// ACT_GL = 5 refers to Get List
+	// ACTION 5 -> ACT_GL = 5 refers to Get List
 	// (╭ರ_•́) from proxy.js
 	url := c.BaseURL + "/cgi?5="
 
@@ -36,7 +36,6 @@ func (c *RouterClient) GetConnectedDevices() ([]ConnectedDevice, error) {
 	req.Header.Set("Content-Type", "text/plain")
 	req.Header.Set("Origin", c.BaseURL)
 	req.Header.Set("Referer", c.BaseURL+"/")
-
 	req.Header.Set("TokenID", c.TokenID)
 
 	resp, err := c.httpClient.Do(req)

@@ -190,3 +190,41 @@ func NewClient(password, routerIP string) (*RouterClient, error) {
 		return nil, fmt.Errorf("%w: %s", ErrUnknownAPI, bodyString)
 	}
 }
+
+// Logout terminates the current router session
+func (c *RouterClient) Logout() error {
+
+	// ACTION 8 -> ACT_CGI = 8 is the code for Logout
+	// (╭ರ_•́) from proxy.js
+	logoutURL := c.BaseURL + "/cgi?8"
+
+	// Request Body Vanishes the moment the req is made
+	// can't trace in network payload/request tab
+	// use XHR Breakpoints in Debugger(FF)/Sources(Chrome) tab and set custom "/cgi" breakpoint
+	// watch Scope tab and look for data that is being sent
+	// Note: use breakpoint after logging in to avoid many /cgi calls
+	payload := "[/cgi/logout#0,0,0,0,0,0#0,0,0,0,0,0]0,0\r\n"
+
+	req, err := http.NewRequest(http.MethodPost, logoutURL, strings.NewReader(payload))
+	if err != nil {
+		return fmt.Errorf("failed to create logout request: %w", err)
+	}
+
+	// Set Headers
+	req.Header.Set("Content-Type", "text/plain")
+	req.Header.Set("Origin", c.BaseURL)
+	req.Header.Set("Referer", c.BaseURL+"/")
+	req.Header.Set("TokenID", c.TokenID)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send logout request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("logout failed with status %d", resp.StatusCode)
+	}
+
+	return nil
+}
