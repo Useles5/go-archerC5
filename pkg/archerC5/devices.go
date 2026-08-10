@@ -84,31 +84,34 @@ func parseDeviceList(respBody string) ([]ConnectedDevice, error) {
 			continue
 		}
 
-		if currentDevice != nil {
-			// SplitN ensures we only split on the FIRST equals sign,
-			// just in case a hostname contains an '=' character
-			parts := strings.SplitN(line, "=", 2)
-			if len(parts) == 2 {
-				key := parts[0]
-				value := parts[1]
+		if currentDevice == nil {
+			continue
+		}
 
-				switch key {
-				case "IPAddress":
-					currentDevice.IPAddress = value
-				case "MACAddress":
-					currentDevice.MACAddress = value
-				case "hostName":
-					currentDevice.HostName = value
-				case "addressSource":
-					currentDevice.AddressSource = value
-				case "leaseTimeRemaining":
-					currentDevice.LeaseTimeRemaining = value
-				case "X_TP_ConnType":
-					currentDevice.ConnType = value
-				case "active":
-					currentDevice.Active = (value == "1")
-				}
-			}
+		// SplitN ensures we only split on the FIRST equals sign,
+		// just in case a hostname contains an '=' character
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key := parts[0]
+		value := parts[1]
+
+		switch key {
+		case "IPAddress":
+			currentDevice.IPAddress = value
+		case "MACAddress":
+			currentDevice.MACAddress = value
+		case "hostName":
+			currentDevice.HostName = value
+		case "addressSource":
+			currentDevice.AddressSource = value
+		case "leaseTimeRemaining":
+			currentDevice.LeaseTimeRemaining = value
+		case "X_TP_ConnType":
+			currentDevice.ConnType = value
+		case "active":
+			currentDevice.Active = (value == "1")
 		}
 
 	}
