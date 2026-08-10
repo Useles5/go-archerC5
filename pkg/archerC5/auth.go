@@ -145,7 +145,42 @@ func NewClient(password, routerIP string) (*RouterClient, error) {
 
 	switch bodyString {
 	case routerSuccess:
-		// nothing to do ¯\_(ツ)_/¯
+		homeReq, err := http.NewRequest(http.MethodGet, baseURL+"/", nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create homepage request: %w", err)
+		}
+
+		homeReq.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+		homeReq.Header.Set("Referer", baseURL+"/")
+
+		homeResp, err := client.Do(homeReq)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch homepage: %w", err)
+		}
+		defer homeResp.Body.Close()
+
+		homeBytes, err := io.ReadAll(homeResp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read homepage: %w", err)
+		}
+
+		// Looking for something like: var token = "1df27f60cf9ee8157bb3bb0bf06004";
+		tokenRegex := regexp.MustCompile(`var\s+token\s*=\s*["']([^"']+)["']`)
+		tokenMatch := tokenRegex.FindStringSubmatch(string(homeBytes))
+
+		var extractedToken string
+		if len(tokenMatch) >= 2 {
+			extractedToken = tokenMatch[1]
+		} else {
+			return nil, errors.New("logged in successfully, but failed to find TokenID in homepage HTML")
+		}
+
+		return &RouterClient{
+			BaseURL:    baseURL,
+			httpClient: client,
+			TokenID:    extractedToken,
+		}, nil
+
 	case routerErrAuthFailed:
 		return nil, ErrAuthFailed
 	case routerErrFormat:
@@ -154,9 +189,4 @@ func NewClient(password, routerIP string) (*RouterClient, error) {
 		// Catch-all
 		return nil, fmt.Errorf("%w: %s", ErrUnknownAPI, bodyString)
 	}
-	return &RouterClient{
-		BaseURL:    baseURL,
-		httpClient: client,
-	}, nil
-
 }

@@ -28,4 +28,19 @@ func main() {
 
 	fmt.Println("Authenticated successfully!")
 	fmt.Printf("Session established with: %s\n", client.BaseURL)
+
+	devices, err := client.GetConnectedDevices()
+	if err != nil {
+		fmt.Printf("Failed to fetch devices: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("\n--- Connected Devices (%d found) ---\n", len(devices))
+	for _, dev := range devices {
+		status := "Offline"
+		if dev.Active {
+			status = "Online"
+		}
+		fmt.Printf("[%s] %s (%s) - %s\n", status, dev.HostName, dev.IPAddress, dev.MACAddress)
+	}
 }

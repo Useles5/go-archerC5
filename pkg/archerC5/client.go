@@ -10,4 +10,5 @@ const DefaultRouterIP = "tplinkwifi.net"
 type RouterClient struct {
 	BaseURL    string
 	httpClient *http.Client
+	TokenID    string
 }
