@@ -69,5 +69,26 @@ func run() error {
 		fmt.Printf("[%s] %s (%s) - %s [Conn: %s]\n", status, dev.HostName, dev.IPAddress, dev.MACAddress, connection)
 	}
 
+	radios, err := client.GetWirelessRadios()
+	if err != nil {
+		return fmt.Errorf("failed to fetch wireless radios: %w", err)
+	}
+
+	fmt.Printf("\n--- Wireless Radios (%d found) ---\n", len(radios))
+	for _, r := range radios {
+		status := "Disabled"
+		if r.Enable {
+			status = "Enabled"
+		}
+
+		auto := ""
+		if r.AutoChannelEnable {
+			auto = " (Auto)"
+		}
+
+		fmt.Printf("[%s] %s | %s | Channel: %d%s | MAC: %s\n",
+			status, r.Band, r.SSID, r.Channel, auto, r.BSSID)
+	}
+
 	return nil
 }
