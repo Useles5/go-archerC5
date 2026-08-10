@@ -50,10 +50,23 @@ func run() error {
 	fmt.Printf("\n--- Connected Devices (%d found) ---\n", len(devices))
 	for _, dev := range devices {
 		status := "Offline"
+		connection := "N/A"
+
 		if dev.Active {
+			// 0=Wired, 1=2.4GHz, 3=5.0GHz
 			status = "Online"
+			switch dev.ConnType {
+			case "0":
+				connection = "Wired"
+			case "1":
+				connection = "2.4 GHz"
+			case "3":
+				connection = "5.0 GHz"
+			default:
+				connection = fmt.Sprintf("Unknown (%s)", dev.ConnType)
+			}
 		}
-		fmt.Printf("[%s] %s (%s) - %s\n", status, dev.HostName, dev.IPAddress, dev.MACAddress)
+		fmt.Printf("[%s] %s (%s) - %s [Conn: %s]\n", status, dev.HostName, dev.IPAddress, dev.MACAddress, connection)
 	}
 
 	return nil

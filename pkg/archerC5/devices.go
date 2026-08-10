@@ -14,6 +14,7 @@ type ConnectedDevice struct {
 	HostName           string
 	AddressSource      string
 	LeaseTimeRemaining string
+	ConnType           string // X_TP_ConnType
 	Active             bool
 }
 
@@ -102,6 +103,8 @@ func parseDeviceList(respBody string) ([]ConnectedDevice, error) {
 					currentDevice.AddressSource = value
 				case "leaseTimeRemaining":
 					currentDevice.LeaseTimeRemaining = value
+				case "X_TP_ConnType":
+					currentDevice.ConnType = value
 				case "active":
 					currentDevice.Active = (value == "1")
 				}
