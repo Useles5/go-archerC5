@@ -53,11 +53,11 @@ func (c *RouterClient) GetWANStatus() (*WANStatus, error) {
 	return parseWANStatus(string(respBodyBytes))
 }
 
-func parseWANStatus(s string) (*WANStatus, error) {
+func parseWANStatus(respBody string) (*WANStatus, error) {
 	var activeWAN *WANStatus
 	var currentWAN *WANStatus
 
-	lines := strings.Split(s, "\n")
+	lines := strings.Split(respBody, "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 

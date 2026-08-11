@@ -112,5 +112,21 @@ func run() error {
 		fmt.Printf("IP Address:   %s\n", wan.IPAddress)
 	}
 
+	lan, err := client.GetLANStatus()
+	if err != nil {
+		return fmt.Errorf("failed to fetch LAN status: %w", err)
+	}
+
+	fmt.Printf("\n--- LAN Status ---\n")
+	dhcp := "Off"
+	if lan.DHCPOn {
+		dhcp = "On"
+	}
+	fmt.Printf("MAC Address:   %s\n", lan.MACAddress)
+	fmt.Printf("IP Address:    %s\n", lan.IPAddress)
+	fmt.Printf("Subnet Mask:   %s\n", lan.SubnetMask)
+	fmt.Printf("DHCP:          %s\n", dhcp)
+	fmt.Printf("IPv6 Assigned: %s (Prefix: %s)\n", lan.IPv6Assigned, lan.IPv6PrefixLen)
+
 	return nil
 }
