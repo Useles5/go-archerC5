@@ -90,5 +90,27 @@ func run() error {
 			status, r.Band, r.SSID, r.Channel, auto, r.BSSID)
 	}
 
+	wan, err := client.GetWANStatus()
+	if err != nil {
+		return fmt.Errorf("failed to fetch WAN status: %w", err)
+	}
+
+	fmt.Printf("\n--- WAN Status ---\n")
+	fmt.Printf("Status:       %s\n", wan.Status)
+
+	if wan.Status == "Connected" {
+		fmt.Printf("Connection:   %s\n", wan.ConnType)
+		fmt.Printf("MAC Address:  %s\n", wan.MACAddress)
+		fmt.Printf("IP Address:   %s\n", wan.IPAddress)
+		fmt.Printf("Subnet Mask:  %s\n", wan.SubnetMask)
+		fmt.Printf("Gateway:      %s\n", wan.Gateway)
+		fmt.Printf("Primary DNS:  %s\n", wan.PrimaryDNS)
+		if wan.SecondaryDNS != "" {
+			fmt.Printf("Second. DNS:  %s\n", wan.SecondaryDNS)
+		}
+	} else {
+		fmt.Printf("IP Address:   %s\n", wan.IPAddress)
+	}
+
 	return nil
 }
