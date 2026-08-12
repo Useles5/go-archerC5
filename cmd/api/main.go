@@ -9,16 +9,19 @@ import (
 	"github.com/Useles5/go-archerC5/pkg/archerC5"
 )
 
+// application holds all dependencies for the http handlers.
 type application struct {
 	client *archerC5.RouterClient
 }
 
+// JSONResponse defines the shape of every API response.
 type JSONResponse struct {
 	Status  string `json:"status"`
 	Message string `json:"message,omitempty"`
 	Data    any    `json:"data,omitempty"`
 }
 
+// writeJSON is a helper to format and send all http responses uniformly.
 func (app *application) writeJSON(w http.ResponseWriter, status int, data any, msg string) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -40,6 +43,7 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data any, m
 
 }
 
+// healthHandler proves the server is running and is reachable.
 func (app *application) healthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		app.writeJSON(w, http.StatusServiceUnavailable, nil, "Router is unreachable")
@@ -69,18 +73,23 @@ func main() {
 		log.Fatal("$ROUTER_PASS env variable is not set")
 	}
 
+	// initialize
 	routerClient, err := archerC5.NewClient(pass, archerC5.DefaultRouterIP)
 	if err != nil {
 		log.Fatalf("failed to initialize router client: %v", err)
 	}
 	defer routerClient.Logout()
 
+	// inject
 	app := &application{
 		client: routerClient,
 	}
+
+	// set up the router
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/health", app.healthHandler)
 
+	// start the server
 	addr := ":8080"
 	log.Printf("Starting web server on http://localhost%s", addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
