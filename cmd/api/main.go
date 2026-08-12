@@ -67,8 +67,8 @@ func (app *application) healthHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// deviceHandler will fetch all devices and apply status query filters.
-func (app *application) deviceHandler(w http.ResponseWriter, r *http.Request) {
+// devicesHandler will fetch all devices and apply status query filters.
+func (app *application) devicesHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		app.writeJSON(w, http.StatusMethodNotAllowed, nil, "Method is not allowed")
 		return
@@ -139,7 +139,7 @@ func main() {
 	// set up the router
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/health", app.healthHandler)
-	mux.HandleFunc("/api/v1/device", app.deviceHandler)
+	mux.HandleFunc("/api/v1/devices", app.devicesHandler)
 
 	// start the server
 	addr := ":8080"
