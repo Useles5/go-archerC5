@@ -70,6 +70,9 @@ func (app *application) healthHandler(w http.ResponseWriter, r *http.Request) {
 // devicesHandler will fetch all devices and apply status query filters.
 func (app *application) devicesHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
+		// according to HTTP spec, if you tell a client a method is not allowed
+		// you are technically required to them which methods are allowed
+		w.Header().Set("Allow", http.MethodGet)
 		app.writeJSON(w, http.StatusMethodNotAllowed, nil, "Method is not allowed")
 		return
 	}
@@ -82,7 +85,15 @@ func (app *application) devicesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	statusFilter := r.URL.Query().Get("status")
-	var filteredDevices []archerC5.ConnectedDevice
+
+	// strict input validation
+	if statusFilter != "" && statusFilter != "online" && statusFilter != "offline" {
+		app.writeJSON(w, http.StatusBadRequest, nil, "Invalid status filter")
+		return
+	}
+
+	// prevent JSON 'null' and optimize memory allocation by pre-allocating max capacity so no constant resizing
+	filteredDevices := make([]archerC5.ConnectedDevice, 0, len(allDevices))
 
 	for _, device := range allDevices {
 		// Design pattern : Negative Exclusion(Guard clause)
