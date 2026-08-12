@@ -71,9 +71,9 @@ func (app *application) healthHandler(w http.ResponseWriter, r *http.Request) {
 func (app *application) devicesHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		// according to HTTP spec, if you tell a client a method is not allowed
-		// you are technically required to them which methods are allowed
+		// you are technically required to tell them which methods are allowed
 		w.Header().Set("Allow", http.MethodGet)
-		app.writeJSON(w, http.StatusMethodNotAllowed, nil, "Method is not allowed")
+		app.writeJSON(w, http.StatusMethodNotAllowed, nil, "Method is not allowed. Please use GET")
 		return
 	}
 
@@ -88,11 +88,11 @@ func (app *application) devicesHandler(w http.ResponseWriter, r *http.Request) {
 
 	// strict input validation
 	if statusFilter != "" && statusFilter != "online" && statusFilter != "offline" {
-		app.writeJSON(w, http.StatusBadRequest, nil, "Invalid status filter")
+		app.writeJSON(w, http.StatusBadRequest, nil, "Invalid status filter. Allowed values: 'online' or 'offline'")
 		return
 	}
 
-	// prevent JSON 'null' and optimize memory allocation by pre-allocating max capacity so no constant resizing
+	// initialize empty slice to prevent JSON 'null', sized to capacity to avoid resizing
 	filteredDevices := make([]archerC5.ConnectedDevice, 0, len(allDevices))
 
 	for _, device := range allDevices {
