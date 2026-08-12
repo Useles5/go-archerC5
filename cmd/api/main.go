@@ -78,6 +78,7 @@ func (app *application) deviceHandler(w http.ResponseWriter, r *http.Request) {
 	allDevices, err := app.client.GetConnectedDevices()
 	if err != nil {
 		app.writeJSON(w, http.StatusInternalServerError, nil, "Failed to fetch connected devices")
+		return
 	}
 
 	statusFilter := r.URL.Query().Get("status")
