@@ -68,13 +68,53 @@ func (app *application) healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // deviceHandler will fetch all devices and apply status query filters.
-// TODO: implement archerC5 sdk call and status query filtering.
 func (app *application) deviceHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		app.writeJSON(w, http.StatusMethodNotAllowed, nil, "Method is not allowed")
+		return
 	}
 
-	app.writeJSON(w, http.StatusOK, nil, "Device endpoint under construction")
+	// fetch all connected devices
+	allDevices, err := app.client.GetConnectedDevices()
+	if err != nil {
+		app.writeJSON(w, http.StatusInternalServerError, nil, "Failed to fetch connected devices")
+	}
+
+	statusFilter := r.URL.Query().Get("status")
+	var filteredDevices []archerC5.ConnectedDevice
+
+	for _, device := range allDevices {
+		// Design pattern : Negative Exclusion(Guard clause)
+
+		/* Instead of writing nested if/else chains to find positive matches,
+		   we immediately 'continue' (skip) any iteration that violates the filter.
+		   This keeps the logic perfectly flat and natively handles the
+		   "no filter provided" scenario without needing an extra 'else' block. */
+
+		// THE OLD WAY
+		// (≖_≖ ) -> [If Match?]
+		//              ↳ ( •_•) -> [If Another Match?]
+		//                            ↳ ( º﹃º) -> [Processing...]
+
+		//  THE GUARD CLAUSE WAY (Negative Exclusion)
+		// (•_•)┌┛ -> ❌ [Violates Filter?] -> Kick it out! (continue)
+		//
+		// (⌐■_■) ──> [Perfect Match] ──> Proceed in a flat line.
+
+		// user asked for online devices , but this is offline -> skip
+		if statusFilter == "online" && !device.Active {
+			continue
+		}
+
+		// user asked for offline devices , but this is online -> skip
+		if statusFilter == "offline" && device.Active {
+			continue
+		}
+
+		// happy path
+		filteredDevices = append(filteredDevices, device)
+	}
+	app.writeJSON(w, http.StatusOK, filteredDevices, "Successfully fetched requested devices")
 }
 
 func main() {
