@@ -67,6 +67,16 @@ func (app *application) healthHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// deviceHandler will fetch all devices and apply status query filters.
+// TODO: implement archerC5 sdk call and status query filtering.
+func (app *application) deviceHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		app.writeJSON(w, http.StatusMethodNotAllowed, nil, "Method is not allowed")
+	}
+
+	app.writeJSON(w, http.StatusOK, nil, "Device endpoint under construction")
+}
+
 func main() {
 	pass := os.Getenv("ROUTER_PASS")
 	if pass == "" {
@@ -88,6 +98,7 @@ func main() {
 	// set up the router
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/health", app.healthHandler)
+	mux.HandleFunc("/api/v1/device", app.deviceHandler)
 
 	// start the server
 	addr := ":8080"
