@@ -129,6 +129,13 @@ func (app *application) devicesHandler(w http.ResponseWriter, r *http.Request) {
 	app.writeJSON(w, http.StatusOK, filteredDevices, "Successfully fetched requested devices")
 }
 
+func (app *application) deviceLookupHandler(w http.ResponseWriter, r *http.Request) {
+	mac := r.PathValue("mac")
+
+	app.writeJSON(w, http.StatusOK, nil, "Lookup endpoint under construction for MAC: "+mac)
+
+}
+
 func main() {
 	pass := os.Getenv("ROUTER_PASS")
 	if pass == "" {
@@ -151,6 +158,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/health", app.healthHandler)
 	mux.HandleFunc("/api/v1/devices", app.devicesHandler)
+	mux.HandleFunc("/api/v1/devices/{mac}", app.deviceLookupHandler)
 
 	// start the server
 	addr := ":8080"
