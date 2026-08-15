@@ -137,11 +137,13 @@ func (app *application) deviceLookupHandler(w http.ResponseWriter, r *http.Reque
 		app.writeJSON(w, http.StatusMethodNotAllowed, nil, "Method is not allowed. Please use GET")
 		return
 	}
-	mac := r.PathValue("mac")
-	if mac == "" {
-		app.writeJSON(w, http.StatusBadRequest, nil, "MAC address is required")
-		return
-	}
+	macParam := r.PathValue("mac")
+
+	// from Go 1.22+, router prevents empty params
+	//if macParam == "" {
+	//	app.writeJSON(w, http.StatusBadRequest, nil, "MAC address is required")
+	//	return
+	//}
 
 	// fetch all connected devices
 	allDevices, err := app.client.GetConnectedDevices()
@@ -152,7 +154,7 @@ func (app *application) deviceLookupHandler(w http.ResponseWriter, r *http.Reque
 
 	for _, device := range allDevices {
 		// strings.EqualFold does a case-insensitive comparison (e.g., AA:BB == aa:bb)
-		if strings.EqualFold(device.MACAddress, mac) {
+		if strings.EqualFold(device.MACAddress, macParam) {
 			app.writeJSON(w, http.StatusOK, device, "Successfully fetched requested device")
 			return
 		}
