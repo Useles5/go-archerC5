@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/Useles5/go-archerC5/pkg/archerC5"
 )
@@ -129,6 +130,37 @@ func (app *application) devicesHandler(w http.ResponseWriter, r *http.Request) {
 	app.writeJSON(w, http.StatusOK, filteredDevices, "Successfully fetched requested devices")
 }
 
+// deviceLookupHandler fetches a single device by its MAC address.
+func (app *application) deviceLookupHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", http.MethodGet)
+		app.writeJSON(w, http.StatusMethodNotAllowed, nil, "Method is not allowed. Please use GET")
+		return
+	}
+	mac := r.PathValue("mac")
+	if mac == "" {
+		app.writeJSON(w, http.StatusBadRequest, nil, "MAC address is required")
+		return
+	}
+
+	// fetch all connected devices
+	allDevices, err := app.client.GetConnectedDevices()
+	if err != nil {
+		app.writeJSON(w, http.StatusInternalServerError, nil, "Failed to fetch connected devices")
+		return
+	}
+
+	for _, device := range allDevices {
+		// strings.EqualFold does a case-insensitive comparison (e.g., AA:BB == aa:bb)
+		if strings.EqualFold(device.MACAddress, mac) {
+			app.writeJSON(w, http.StatusOK, device, "Successfully fetched requested device")
+			return
+		}
+	}
+
+	app.writeJSON(w, http.StatusNotFound, nil, "Device not found")
+}
+
 func main() {
 	pass := os.Getenv("ROUTER_PASS")
 	if pass == "" {
@@ -151,6 +183,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/health", app.healthHandler)
 	mux.HandleFunc("/api/v1/devices", app.devicesHandler)
+	mux.HandleFunc("/api/v1/devices/{mac}", app.deviceLookupHandler)
 
 	// start the server
 	addr := ":8080"
