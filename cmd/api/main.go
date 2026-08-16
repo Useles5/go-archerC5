@@ -1,11 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/Useles5/go-archerC5/pkg/archerC5"
 )
@@ -50,7 +55,6 @@ func (app *application) healthHandler(w http.ResponseWriter, r *http.Request) {
 		app.writeJSON(w, http.StatusServiceUnavailable, nil, "Router is unreachable")
 		return
 	}
-
 	_, err := app.client.GetLANStatus()
 	if err != nil {
 		app.writeJSON(w, http.StatusServiceUnavailable, nil, "Router is unreachable")
@@ -174,7 +178,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to initialize router client: %v", err)
 	}
-	defer routerClient.Logout()
 
 	// inject
 	app := &application{
@@ -187,10 +190,41 @@ func main() {
 	mux.HandleFunc("/api/v1/devices", app.devicesHandler)
 	mux.HandleFunc("/api/v1/devices/{mac}", app.deviceLookupHandler)
 
-	// start the server
-	addr := ":8080"
-	log.Printf("Starting web server on http://localhost%s", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil {
-		log.Fatalf("failed to start web server: %v", err)
+	// server struct to manage its lifecycle
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
 	}
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+
+	serverErr := make(chan error, 1)
+
+	go func() {
+		log.Printf("Starting web server on http://localhost%s", server.Addr)
+		serverErr <- server.ListenAndServe()
+	}()
+
+	select {
+	case err := <-serverErr:
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErr <- err
+		}
+	case <-quit:
+		log.Println("Received shutdown signal. Shutting down web server...")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("server forced to shutdown: %v", err)
+	}
+
+	log.Println("Logging out of TP-Link router...")
+	if err := app.client.Logout(); err != nil {
+		log.Printf("failed to logout of router gracefully: %v", err)
+	}
+	log.Println("Server gracefully stopped")
 }
