@@ -140,7 +140,8 @@ func (app *application) rebootHandler(w http.ResponseWriter, r *http.Request) {
 	err := app.client.Reboot()
 	if err != nil {
 		app.writeJSON(w, http.StatusInternalServerError, nil, "Failed to reboot")
+		return
 	}
 
-	app.writeJSON(w, http.StatusOK, nil, "Rebooting now. Network will be offline till rebooting is complete(approx 2 min")
+	app.writeJSON(w, http.StatusAccepted, nil, "Rebooting now. Network will be offline till rebooting is complete(approx 2 min")
 }
