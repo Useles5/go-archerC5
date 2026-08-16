@@ -129,3 +129,18 @@ func (app *application) deviceLookupHandler(w http.ResponseWriter, r *http.Reque
 
 	app.writeJSON(w, http.StatusNotFound, nil, "Device not found")
 }
+
+func (app *application) rebootHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		app.writeJSON(w, http.StatusMethodNotAllowed, nil, "Method is not allowed. Please use POST")
+		return
+	}
+
+	err := app.client.Reboot()
+	if err != nil {
+		app.writeJSON(w, http.StatusInternalServerError, nil, "Failed to reboot")
+	}
+
+	app.writeJSON(w, http.StatusOK, nil, "Rebooting now. Network will be offline till rebooting is complete(approx 2 min")
+}
