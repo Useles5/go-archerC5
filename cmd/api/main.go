@@ -178,7 +178,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to initialize router client: %v", err)
 	}
-	//defer routerClient.Logout()
 
 	// inject
 	app := &application{
@@ -200,26 +199,32 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
+	serverErr := make(chan error, 1)
+
 	go func() {
 		log.Printf("Starting web server on http://localhost%s", server.Addr)
-		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("failed to start web server: %v", err)
-		}
+		serverErr <- server.ListenAndServe()
 	}()
 
-	<-quit
-	log.Println("Received shutdown signal. Shutting down web server...")
-
-	log.Println("Logging out of TP-Link router...")
-	if err := app.client.Logout(); err != nil {
-		log.Printf("failed to logout of router gracefully: %v", err)
+	select {
+	case err := <-serverErr:
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErr <- err
+		}
+	case <-quit:
+		log.Println("Received shutdown signal. Shutting down web server...")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("server forced to shutdown: %v", err)
+		log.Printf("server forced to shutdown: %v", err)
+	}
+
+	log.Println("Logging out of TP-Link router...")
+	if err := app.client.Logout(); err != nil {
+		log.Printf("failed to logout of router gracefully: %v", err)
 	}
 	log.Println("Server gracefully stopped")
 }
