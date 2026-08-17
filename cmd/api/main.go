@@ -91,7 +91,7 @@ func main() {
 	mux.HandleFunc("/api/v1/health", app.healthHandler)
 	mux.HandleFunc("/api/v1/devices", app.devicesHandler)
 	mux.HandleFunc("/api/v1/devices/{mac}", app.deviceLookupHandler)
-	mux.HandleFunc("/api/v1/reboot", app.rebootHandler)
+	mux.HandleFunc("/api/v1/reboot", app.requireAPIKey(app.rebootHandler))
 
 	// server struct to manage its lifecycle
 	server := &http.Server{
