@@ -7,8 +7,17 @@ import (
 	"github.com/Useles5/go-archerC5/pkg/archerC5"
 )
 
+// config holds all the configurations for the application
+type config struct {
+	port       int
+	routerIP   string
+	routerPass string
+	apiKey     string
+}
+
 // application holds all dependencies for the http handlers.
 type application struct {
+	config config
 	client *archerC5.RouterClient
 }
 
