@@ -24,7 +24,8 @@ type application struct {
 // healthHandler proves the server is running and is reachable.
 func (app *application) healthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		app.writeJSON(w, http.StatusServiceUnavailable, nil, "Router is unreachable")
+		w.Header().Set("Allow", http.MethodGet)
+		app.writeJSON(w, http.StatusMethodNotAllowed, nil, "Method is not allowed. Please use GET")
 		return
 	}
 	_, err := app.client.GetLANStatus()
