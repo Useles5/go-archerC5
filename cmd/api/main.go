@@ -17,9 +17,17 @@ import (
 	"time"
 
 	"github.com/Useles5/go-archerC5/pkg/archerC5"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+
+	// load the .env file
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Printf("No .env file found, defaulting to system env variables")
+	}
+
 	// API Key generation
 	var generateKey bool
 	flag.BoolVar(&generateKey, "generate-key", false, "Generate an API key")
@@ -52,7 +60,7 @@ func main() {
 		// check for error and range of provided port number
 		// Start at 1; port 0 triggers OS dynamic port allocation.
 		if err != nil || port < 1 || port > 65535 {
-			log.Fatalf("Invalid PORT env variable '%s', Must be a number between 1 and 65535.", portStr)
+			log.Fatalf("Invalid PORT env variable %q:, must be a number between 1 and 65535", portStr)
 		}
 		cfg.port = port
 	}
