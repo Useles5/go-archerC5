@@ -7,15 +7,25 @@ import (
 	"github.com/Useles5/go-archerC5/pkg/archerC5"
 )
 
+// config holds all the configurations for the application
+type config struct {
+	port       int
+	routerIP   string
+	routerPass string
+	apiKey     string
+}
+
 // application holds all dependencies for the http handlers.
 type application struct {
+	config config
 	client *archerC5.RouterClient
 }
 
 // healthHandler proves the server is running and is reachable.
 func (app *application) healthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		app.writeJSON(w, http.StatusServiceUnavailable, nil, "Router is unreachable")
+		w.Header().Set("Allow", http.MethodGet)
+		app.writeJSON(w, http.StatusMethodNotAllowed, nil, "Method is not allowed. Please use GET")
 		return
 	}
 	_, err := app.client.GetLANStatus()
